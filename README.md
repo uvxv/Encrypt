@@ -1,7 +1,9 @@
 # Encrypt
 
-[![Python Security Audit](https://github.com/uvxv/Encrypt/actions/workflows/security-audit.yml/badge.svg)](https://github.com/uvxv/Encrypt/actions/workflows/security-audit.yml)
-[![Latest Release](https://img.shields.io/github/v/release/uvxv/Encrypt?label=release)](https://github.com/uvxv/Encrypt/releases)
+<p align="center">
+	<a href="https://github.com/uvxv/Encrypt/actions/workflows/security-audit.yml"><img src="https://github.com/uvxv/Encrypt/actions/workflows/security-audit.yml/badge.svg" alt="Python Security Audit"></a>
+	<a href="https://github.com/uvxv/Encrypt/releases"><img src="https://img.shields.io/github/v/release/uvxv/Encrypt?label=release" alt="Latest Release"></a>
+</p>
 
 A lightweight CLI folder encryption and decryption tool built with Python using **AES-256-GCM** and **scrypt** key derivation (`pycryptodome`).
 
