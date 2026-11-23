@@ -1,66 +1,83 @@
 # Encrypt
 
-A lightweight CLI-based folder encryption and decryption tool built with Python and AES-128 (`pycryptodome`).
+[![Python Security Audit](https://github.com/uvxv/Encrypt/actions/workflows/security-audit.yml/badge.svg)](https://github.com/uvxv/Encrypt/actions/workflows/security-audit.yml)
+[![Latest Release](https://img.shields.io/github/v/release/uvxv/Encrypt?label=release)](https://github.com/uvxv/Encrypt/releases)
+
+A lightweight CLI folder encryption and decryption tool built with Python using **AES-256-GCM** and **scrypt** key derivation (`pycryptodome`).
 
 ## Features
 
-- **Recursive folder processing:** Encrypts or decrypts all files inside a directory and its subdirectories.
-- **AES-128 encryption:** Encrypts file contents using AES (ECB mode with PKCS7 padding and Base64 encoding) and appends a `.aes` extension.
-- **Safe re-runs:** Skips files that are already encrypted (`.aes`) when encrypting, and skips non-`.aes` files when decrypting.
-- **Password verification:** Detects invalid passwords during decryption before overwriting files.
-- **Standalone executable:** Available as a single Windows `.exe` with no Python installation required.
+- **Authenticated AES-256-GCM encryption:** Protects confidentiality and integrity with a per-file random 16-byte salt, 12-byte nonce, and 16-byte GCM authentication tag (48 bytes total overhead — no Base64 bloat).
+- **Any-length passwords:** Derives a 256-bit key via `scrypt` instead of requiring a fixed 16-character key. Passwords are hidden while typing and confirmed during encryption.
+- **Streaming I/O:** Processes files in 1 MiB chunks so large files use minimal RAM.
+- **Crash-safe atomic writes:** Writes to a temporary file first and only replaces/removes the original after encryption or GCM authentication succeeds.
+- **Interactive & CLI modes:** Run with no arguments for guided prompts (double-click friendly), or pass flags (`-e`, `-d`, `-p`) for scripting.
+- **Standalone Windows executable:** Available as a single `encrypt.exe` with no Python installation required.
 
 ## Quick Start (Windows Executable)
 
 1. Download `encrypt.exe` from the [Releases](https://github.com/uvxv/Encrypt/releases) page.
-2. Double-click `encrypt.exe` or run it from PowerShell / Command Prompt.
+2. Double-click `encrypt.exe` for interactive mode, or run it from PowerShell / Command Prompt.
 
 ## Running from Source
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.10+
 - `pycryptodome`
 
 ### Setup & Run
 ```bash
 git clone https://github.com/uvxv/Encrypt.git
 cd Encrypt
-pip install pycryptodome
+pip install -r requirements.txt
 python encrypt.py
 ```
 
 ## Usage
 
-When launched, follow the interactive prompts:
+### Interactive Mode
+Run `encrypt.exe` (or `python encrypt.py`) with no arguments:
 
 ```text
-This program is to encrypt/decrypt the folders
+Encrypt v2.0.0 - Folder Encryption/Decryption Tool (AES-256-GCM)
 
-Select whether to encrypt of decrypt a folder (e/d): e
-Enter the absolute folder path: C:\Users\You\Documents\MyFolder
-Enter the password: my16charpassword
-Encrypted the file example.txt
-Press any key to exit...
+Select whether to encrypt or decrypt a folder (e/d, or q to quit): e
+Enter the folder path: "C:\Users\You\Documents\MyFolder"
+Enter the password:
+Confirm the password:
+Encrypted: example.txt
+
+Done: 1 encrypted, 0 skipped, 0 failed.
+Press Enter to exit...
 ```
 
-- Enter **`e`** to encrypt all unencrypted files in the folder (adds `.aes` to each filename).
-- Enter **`d`** to decrypt all `.aes` files in the folder (restores the original filenames).
-- Provide the **absolute path** to a directory (not an individual file).
-- Use a password that is **exactly 16 characters** long.
+*(Surrounding quotes from Windows "Copy as path" are stripped automatically.)*
+
+### Command-Line Arguments
+```powershell
+# Encrypt a folder (prompts securely for password + confirmation)
+encrypt.exe -e "C:\Users\You\Documents\MyFolder"
+
+# Decrypt a folder (prompts securely for password)
+encrypt.exe -d "C:\Users\You\Documents\MyFolder"
+
+# Non-interactive scripting mode
+encrypt.exe -e "C:\Users\You\Documents\MyFolder" -p "your-strong-password"
+encrypt.exe -d "C:\Users\You\Documents\MyFolder" -p "your-strong-password"
+
+# Show version or help
+encrypt.exe --version
+encrypt.exe --help
+```
 
 ## Building the Standalone Executable
 
-To package `encrypt.py` into a single Windows executable yourself:
+For the smallest executable, build inside a clean virtual environment:
 
 ```powershell
-pip install pyinstaller pycryptodome
-python -m PyInstaller --onefile --clean --icon=favicon.ico encrypt.py
-```
-
-Or rebuild directly from the saved spec file:
-
-```powershell
-python -m PyInstaller encrypt.spec
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install pyinstaller pycryptodome
+.\.venv\Scripts\python.exe -m PyInstaller --onefile --clean --icon="$PWD\favicon.ico" --workpath build --distpath dist --specpath build encrypt.py
 ```
 
 The standalone executable will be generated at `dist/encrypt.exe`.
@@ -69,15 +86,16 @@ The standalone executable will be generated at `dist/encrypt.exe`.
 
 ```text
 Encrypt/
-├── encrypt.py       # Interactive CLI entry point for folder encryption/decryption
-├── moduleAES.py     # AES encryption/decryption helpers (AESfile, AEStxt)
-├── favicon.ico      # Icon embedded into the Windows executable
-├── encrypt.spec     # PyInstaller build configuration
-└── README.md        # Project documentation
+├── .github/workflows/
+│   └── security-audit.yml  # Bandit, pip-audit & crypto integrity CI workflow
+├── encrypt.py              # Interactive & flag-based CLI for folder encryption/decryption
+├── moduleAES.py            # AES-256-GCM + scrypt streaming encryption helpers (AESfile, AEStxt)
+├── requirements.txt        # Python runtime dependencies
+├── favicon.ico             # Icon embedded into the Windows executable
+└── README.md               # Project documentation
 ```
 
 ## Important Notes
 
-- **Password length:** Passwords must be **exactly 16 characters** (128-bit AES key).
-- **In-place modification:** Files are encrypted and decrypted in place. Always keep a backup of important files and store your password safely — lost passwords cannot be recovered.
-- **Security note:** This tool uses AES in ECB mode and is best suited for lightweight personal or educational use rather than high-security production encryption.
+- **v2.0.0 format change:** Files encrypted with v2.0.0 use the `ENC2` AES-256-GCM binary format and are **not** compatible with v1.0.0 `.aes` files (which used AES-128-ECB + Base64). Decrypt any v1.0.0 files with v1.0.0 before upgrading.
+- **No password recovery:** Keep a backup of important data and store your password safely — encrypted files cannot be recovered without the original password.
