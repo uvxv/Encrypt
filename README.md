@@ -53,7 +53,6 @@ Done: 1 encrypted, 0 skipped, 0 failed.
 Press Enter to exit...
 ```
 
-*(Surrounding quotes from Windows "Copy as path" are stripped automatically.)*
 
 ### Command-Line Arguments
 ```powershell

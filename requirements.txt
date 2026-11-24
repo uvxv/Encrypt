@@ -1,1 +1,7 @@
-pycryptodome>=3.20.0
+# Runtime dependencies for Encrypt
+# All other imports (argparse, base64, contextlib, getpass, os, sys, tempfile)
+#are part of the Python standard libary and do not need to be installed.
+pycryptodome==4.6.0
+
+
+# pyinstaller==6.22.3
